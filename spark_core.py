@@ -1,22 +1,23 @@
 from pyspark import SparkContext
 
 
-print("aaaaa")
 sc = SparkContext('local')
 sc.setLogLevel('WARN')
 
 # rdd初始化的几种方式
-data1 = sc.parallelize(("a", 2))
-rdd = sc.textFile("C:/Users/lirui/Desktop/test.txt")
-rdd2 = sc.wholeTextFiles("C:/Users/lirui/Desktop/test.txt")
+# data1 = sc.parallelize(("a", 2))
+# rdd = sc.textFile("C:/Users/lirui/Desktop/test.txt")
+# rdd2 = sc.wholeTextFiles("C:/Users/lirui/Desktop/test.txt")
+
+# #########################transform操作###################################
 
 # rdd算子操作
-rdd_test = sc.parallelize([(1, 2, 3, 4, 5), (3, 4, 5, 6, 7), (5, 6, 7, 8, 9)])
+rdd_test = sc.parallelize([(1, 2), (3, 4), (5, 6), (1, 3), (2, 4), (5, 3)])
 rdd_test.cache()
 print("测试算子生成完毕", rdd_test.collect())
 
 # map算子
-rdd_map = rdd_test.map(lambda row:tuple([2*x for x in row]))
+rdd_map = rdd_test.map(lambda row: tuple([2*x for x in row]))
 print("map", rdd_map.collect())
 
 # filter算子
@@ -24,9 +25,9 @@ rdd_filter = rdd_test.filter(lambda row: 1 in row or 3 in row)
 print("filter", rdd_filter.collect())
 
 # flatmap算子（扁平化）
-rdd_flatmap = rdd_test.flatMap(lambda x:map(lambda a: 2*a, x))
+rdd_flatmap = rdd_test.flatMap(lambda x: map(lambda m: 2*m, x))
 print("flatmap", rdd_flatmap.collect())
-"""
+
 # distinct算子（去重）
 rdd_distinct = rdd_flatmap.distinct()
 print("distinct", rdd_distinct.collect())
@@ -72,7 +73,7 @@ print("mapValues", rdd_mapValues.collect())
 # leftOutJoin
 rdd_leftOutJoin = rdd_test.leftOuterJoin(rdd_filter)
 print("leftOutJoin", rdd_leftOutJoin.collect())
-"""
+
 # subtractByKey（rdd1的键排除rdd2的键的rdd1的键值对）
 rdd_subtractByKey = rdd_test.subtractByKey(rdd_filter)
 print("subtractByKey", rdd_subtractByKey.collect())
@@ -85,24 +86,31 @@ print("groupBykey", rdd_groupByKey.collect())
 # rdd_groupBy = rdd_test.groupBy()
 # print("groupBy", rdd_groupBy.collect())
 
-print(rdd_test.count())
-print(rdd_test.countByKey())
-print(rdd_test.countByValue())
-print(rdd_test.first())
-print(rdd_test.top(2))
-print(rdd_test.take(2))
-print(rdd_test.max())
-print(rdd_test.min())
-print(rdd_test.reduce())
+# reduceByKey（分组执行传入的函数）
+rdd_reduceByKey = rdd_test.reduceByKey(lambda x, y: x+y)
+print("reduceByKey", rdd_reduceByKey.collect())
 
 
-print(rdd_test.mapValues(lambda x: x).reduceByKey())
-print(rdd_test.mapValues(lambda x: x).countByKey())
-print(rdd_test.mapValues(lambda x: x).countByValue())
-print(rdd_test.mapValues(lambda x: x).mean())
-print(rdd_test.mapValues(lambda x: x).sum())
-print(rdd_test.mapValues(lambda x: x).stdev())
-print(rdd_test.mapValues(lambda x: x).variance())
+# #########################action操作###################################
 
+
+print("count", rdd_test.count())   # 计数
+print("countByKey", rdd_test.countByKey())   # 对每个键计数，返回字典
+print("countByValue", rdd_test.countByValue())  # 对每组键值对计数，返回键值对的字典
+print("first", rdd_test.first())  # 取rdd的第一个元素
+print("top", rdd_test.top(2))  # 取rdd最大的n个元素
+print("take", rdd_test.take(2))  # 取rdd前n个元素
+print("max", rdd_test.max())  # 取rdd最大的一个元素
+print("min", rdd_test.min())  # 取rdd最小的一个元素
+print("reduce", rdd_flatmap.reduce(lambda x, y: x+y))  # 适用于一维数组
+
+
+print("countByKey", rdd_test.mapValues(lambda x: x).countByKey())  # 分组计数，适用于键值对
+print("countByValue", rdd_test.mapValues(lambda x: x).countByValue())  # 对键值对分组计数，适用于键值对
+print("mean", rdd_test.flatMap(lambda x: map(lambda m: 2*m, x)).mean())  # 求平均值，适用于一维数组
+print("sum", rdd_test.flatMap(lambda x: map(lambda m: 2*m, x)).sum())  # 求和，适用于一维数组
+print("stdev", rdd_test.flatMap(lambda x: map(lambda m: 2*m, x)).stdev())  # 求标准差，适用于一维数组
+print("variance", rdd_test.flatMap(lambda x: map(lambda m: 2*m, x)).variance())  # 求方差，适用于一维数组
 
 sc.stop()
+
